@@ -1,0 +1,156 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────
+# Docube Recommendation Service — E2E Test Environment
+#
+# Includes: PostgreSQL+pgvector, Redis, Kafka+Zookeeper,
+#           the recommendation-service, seed runner, and frontend.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up --build
+# ─────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL with pgvector ────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rm-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "2410"
+      POSTGRES_DB: horob1_docub_rm_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ───────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rm-redis
+    command: redis-server --requirepass 2410
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "2410", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Zookeeper ───────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: rm-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  # ── Kafka ───────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: rm-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # ── Seed Runner ─────────────────────────────────────────────────────
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.seed
+    container_name: rm-seed
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: horob1_docub_rm_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "2410"
+
+  # ── Recommendation Service (Backend) ────────────────────────────────
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rm-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    environment:
+      # Dev mode
+      DEV_MODE: "true"
+      FRONTEND_URL: "http://localhost:3000"
+      # PostgreSQL
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: horob1_docub_rm_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "2410"
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "2410"
+      REDIS_DB: 5
+      # Kafka — PLAINTEXT in test environment (no SASL)
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_GROUP_ID: rm-service-group
+      KAFKA_AUTO_OFFSET_RESET: earliest
+      # Eureka — disabled in test
+      EUREKA_SERVER: "http://localhost:9000/eureka"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  # ── Frontend (Next.js) ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rm-frontend
+    depends_on:
+      recommendation-service:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://recommendation-service:8000"
+      NEXT_PUBLIC_BROWSER_API_URL: "http://localhost:8000"
+
+volumes:
+  pgdata:

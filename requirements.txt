@@ -1,0 +1,28 @@
+# Core
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+
+# Async PostgreSQL + pgvector
+asyncpg
+pgvector
+
+# ML
+numpy
+scikit-learn
+sentence-transformers
+joblib
+
+# LightGBM (optional — fallback to LogisticRegression if unavailable)
+lightgbm
+
+# Messaging
+aiokafka
+
+# Redis (async)
+redis[hiredis]
+
+# Eureka Discovery
+py-eureka-client
