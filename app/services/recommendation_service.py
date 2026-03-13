@@ -241,6 +241,10 @@ def _format_recommendation(doc: dict, reason: str = "") -> dict:
         "tags": doc.get("tags") or [],
         "categories": doc.get("categories") or [],
         "language": doc.get("language", ""),
+        "faculty": doc.get("faculty"),
+        "author_id": doc.get("author_id"),
+        "author_role": doc.get("author_role"),
+        "popularity_score": doc.get("popularity_score"),
         "score": round(float(score), 4),
         "reason": reason,
     }

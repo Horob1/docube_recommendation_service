@@ -7,8 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Install only seed dependencies
-RUN pip install --no-cache-dir asyncpg numpy sentence-transformers
+# Install mỗi package riêng lẻ — tránh timeout khi download 1 batch lớn
+RUN pip install --no-cache-dir --timeout 300 --retries 5 \
+    torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --timeout 300 --retries 5 asyncpg
+RUN pip install --no-cache-dir --timeout 300 --retries 5 numpy
+RUN pip install --no-cache-dir --timeout 300 --retries 5 sentence-transformers
 
 COPY tests/seed/ ./tests/seed/
 COPY schema.sql .

@@ -98,7 +98,6 @@ app = FastAPI(
 exclude_paths = ["/health", "/docs", "/openapi.json", "/redoc"]
 
 if settings.dev_mode:
-    # In dev mode, also exclude the dev-only API paths from auth middleware
     exclude_paths += ["/api/validate", "/api/auth", "/api/documents"]
 
     # CORS for frontend

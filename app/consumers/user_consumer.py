@@ -63,6 +63,7 @@ async def _handle_message(payload: dict) -> None:
             username=event.username,
             display_name=event.display_name,
             role=event.role,
+            faculty=event.faculty,
             interests=event.interests,
         )
 
@@ -73,6 +74,8 @@ async def _handle_message(payload: dict) -> None:
         await user_repo.upsert_user(
             user_id=event.user_id,
             role=event.role,
+            faculty=event.faculty,
+            interests=event.interests,
             embedding=embedding,
             ab_group=ab_group,  # None → will assign random
         )

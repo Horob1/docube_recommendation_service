@@ -21,6 +21,7 @@ async def upsert_document(
     tags: list[str],
     categories: list[str],
     language: Optional[str],
+    faculty: Optional[str],
     author_id: Optional[str],
     author_role: Optional[str],
     embedding: np.ndarray,
@@ -33,8 +34,8 @@ async def upsert_document(
             INSERT INTO documents (
                 document_id, title, description, content,
                 tags, categories, language,
-                author_id, author_role, embedding, updated_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, NOW())
+                faculty, author_id, author_role, embedding, updated_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, NOW())
             ON CONFLICT (document_id) DO UPDATE SET
                 title = EXCLUDED.title,
                 description = EXCLUDED.description,
@@ -42,6 +43,7 @@ async def upsert_document(
                 tags = EXCLUDED.tags,
                 categories = EXCLUDED.categories,
                 language = EXCLUDED.language,
+                faculty = EXCLUDED.faculty,
                 author_id = EXCLUDED.author_id,
                 author_role = EXCLUDED.author_role,
                 embedding = EXCLUDED.embedding,
@@ -49,7 +51,7 @@ async def upsert_document(
             """,
             document_id, title, description, content,
             tags, categories, language,
-            author_id, author_role, embedding,
+            faculty, author_id, author_role, embedding,
         )
     logger.debug("Upserted document %s", document_id)
 
@@ -96,7 +98,7 @@ async def ann_search(
             """
             SELECT
                 document_id, title, description, tags, categories,
-                language, author_id, author_role,
+                language, faculty, author_id, author_role,
                 popularity_score, updated_at, embedding,
                 embedding <=> $1 AS distance
             FROM documents
@@ -117,11 +119,45 @@ async def get_trending(limit: int = 20) -> list[dict]:
         rows = await conn.fetch(
             """
             SELECT document_id, title, description, tags, categories,
-                   language, popularity_score, updated_at
+                   language, faculty, author_id, author_role,
+                   popularity_score, updated_at
             FROM documents
             ORDER BY popularity_score DESC
             LIMIT $1
             """,
+            limit,
+        )
+        return [dict(r) for r in rows]
+
+
+async def find_by_keywords(keywords: list[str], limit: int = 10) -> list[dict]:
+    """
+    Find documents whose tags or categories contain any of the given keywords.
+    Used to enrich search queries with matching-document embeddings.
+    """
+    if not keywords:
+        return []
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        # Match any keyword (case-insensitive) against tags or categories
+        patterns = [f"%{kw.lower()}%" for kw in keywords]
+        rows = await conn.fetch(
+            """
+            SELECT document_id, title, embedding
+            FROM documents
+            WHERE embedding IS NOT NULL
+              AND (
+                EXISTS (
+                  SELECT 1 FROM unnest(tags) t WHERE lower(t) LIKE ANY($1::text[])
+                )
+                OR EXISTS (
+                  SELECT 1 FROM unnest(categories) c WHERE lower(c) LIKE ANY($1::text[])
+                )
+              )
+            ORDER BY popularity_score DESC
+            LIMIT $2
+            """,
+            patterns,
             limit,
         )
         return [dict(r) for r in rows]

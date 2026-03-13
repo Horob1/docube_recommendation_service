@@ -1,8 +1,13 @@
 """
-Auto Seed Script — populates the database with real test data.
+Auto Seed Script — populates the database with Vietnamese university mock data.
 
 Uses sentence-transformers to generate REAL embeddings.
-Seeds: 200 documents, 30 users, 500+ interactions.
+Seeds: 200 documents, 30 users, 600+ interactions.
+
+Domain: Docube — tài liệu học thuật đại học Việt Nam
+  - Tài liệu: bài giảng, khóa luận, đề thi, bài tập, tài liệu tham khảo
+  - Người dùng: sinh viên, giảng viên từ nhiều khoa
+  - Tương tác: view, read, download, buy, bookmark
 
 Usage:
     python -m tests.seed.seed_data
@@ -37,184 +42,185 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "2410")
 
 NUM_DOCUMENTS = 200
 NUM_USERS = 30
-NUM_INTERACTIONS = 500
+NUM_INTERACTIONS = 600
 EMBEDDING_DIM = 384
 
-# ── Document Templates ────────────────────────────────────────────────
-CATEGORIES = {
-    "Machine Learning": {
-        "tags": ["ml", "ai", "deep-learning", "neural-networks", "sklearn"],
+# ── Academic structure ────────────────────────────────────────────────
+
+FACULTIES = {
+    "Khoa Công nghệ thông tin": {
+        "departments": [
+            "Bộ môn Khoa học máy tính",
+            "Bộ môn Hệ thống thông tin",
+            "Bộ môn Kỹ thuật phần mềm",
+            "Bộ môn Mạng và truyền thông",
+            "Bộ môn Trí tuệ nhân tạo",
+        ],
+        "majors": [
+            "Khoa học máy tính",
+            "Hệ thống thông tin",
+            "Kỹ thuật phần mềm",
+            "An toàn thông tin",
+            "Trí tuệ nhân tạo",
+        ],
+        "subject_codes": ["IT3190", "IT4062", "IT4063", "IT4080", "IT3100", "IT4090", "IT3150"],
+        "categories": ["cntt", "lap-trinh", "ai", "co-so-du-lieu", "mang-may-tinh"],
+        "tags_pool": ["python", "java", "sql", "machine-learning", "ai", "deep-learning",
+                      "web", "api", "docker", "kubernetes", "linux", "network", "security",
+                      "database", "postgresql", "redis", "microservices", "nlp", "pytorch"],
         "topics": [
-            "Introduction to Machine Learning Algorithms",
-            "Supervised Learning: Classification and Regression",
-            "Unsupervised Learning: Clustering and Dimensionality Reduction",
-            "Ensemble Methods: Random Forests and Gradient Boosting",
-            "Feature Engineering Best Practices",
-            "Cross-Validation and Model Selection",
-            "Hyperparameter Tuning with Grid Search",
-            "Introduction to AutoML",
-            "Transfer Learning Fundamentals",
-            "Reinforcement Learning Basics",
-            "Bayesian Machine Learning",
-            "Online Learning and Streaming Data",
+            ("Giới thiệu về Machine Learning và ứng dụng", "lecture"),
+            ("Lập trình hướng đối tượng với Java", "lecture"),
+            ("Cơ sở dữ liệu nâng cao - PostgreSQL", "lecture"),
+            ("Thiết kế và phân tích giải thuật", "lecture"),
+            ("Mạng máy tính - giao thức TCP/IP", "lecture"),
+            ("Bảo mật thông tin cơ bản", "lecture"),
+            ("Trí tuệ nhân tạo - tìm kiếm và suy luận", "lecture"),
+            ("Kỹ thuật phần mềm - quy trình Agile Scrum", "lecture"),
+            ("Deep Learning với PyTorch", "lecture"),
+            ("Xây dựng RESTful API với FastAPI", "lecture"),
+            ("Kiến trúc microservices", "lecture"),
+            ("Containerization với Docker và Kubernetes", "lecture"),
+            ("Xử lý ngôn ngữ tự nhiên tiếng Việt", "lecture"),
+            ("Hệ quản trị cơ sở dữ liệu MongoDB", "lecture"),
+            ("Lập trình Web - HTML, CSS, JavaScript", "lecture"),
+            ("Khóa luận tốt nghiệp: Hệ thống gợi ý tài liệu học tập", "thesis"),
+            ("Khóa luận tốt nghiệp: Ứng dụng AI trong phát hiện gian lận", "thesis"),
+            ("Khóa luận tốt nghiệp: Xây dựng Chatbot tư vấn tuyển sinh", "thesis"),
+            ("Đề thi cuối kỳ - Cơ sở dữ liệu 2023", "exam"),
+            ("Đề thi giữa kỳ - Lập trình Java 2024", "exam"),
+            ("Bài tập lớn - Xây dựng ứng dụng Todo List", "exercise"),
+            ("Bài tập thực hành - SQL nâng cao", "exercise"),
+            ("Tài liệu tham khảo: Clean Code - Robert C. Martin", "reference"),
+            ("Tài liệu tham khảo: System Design Interview", "reference"),
         ],
     },
-    "Deep Learning": {
-        "tags": ["deep-learning", "pytorch", "tensorflow", "cnn", "rnn", "transformer"],
+    "Khoa Kinh tế": {
+        "departments": [
+            "Bộ môn Kinh tế học",
+            "Bộ môn Quản trị kinh doanh",
+            "Bộ môn Tài chính - Ngân hàng",
+            "Bộ môn Marketing",
+            "Bộ môn Kế toán - Kiểm toán",
+        ],
+        "majors": [
+            "Kinh tế học",
+            "Quản trị kinh doanh",
+            "Tài chính - Ngân hàng",
+            "Marketing",
+            "Kế toán",
+        ],
+        "subject_codes": ["EC2001", "EC3010", "FIN2050", "MKT3001", "ACC2010"],
+        "categories": ["kinh-te", "quan-tri", "tai-chinh", "marketing", "ke-toan"],
+        "tags_pool": ["kinh-te-vi-mo", "kinh-te-vi-mo", "tai-chinh", "ngan-hang",
+                      "marketing", "thuong-mai-dien-tu", "ke-toan", "quan-tri-rui-ro",
+                      "chung-khoan", "dau-tu", "phan-tich-tai-chinh", "erp"],
         "topics": [
-            "Convolutional Neural Networks for Image Classification",
-            "Recurrent Neural Networks and LSTM",
-            "Transformers and Attention Mechanisms",
-            "Generative Adversarial Networks",
-            "Autoencoders and Variational Autoencoders",
-            "Object Detection with YOLO",
-            "Semantic Segmentation",
-            "Neural Style Transfer",
-            "Graph Neural Networks",
-            "Neural Architecture Search",
-            "Knowledge Distillation",
-            "Self-Supervised Learning",
+            ("Kinh tế vĩ mô - các chính sách kinh tế Việt Nam", "lecture"),
+            ("Quản trị kinh doanh căn bản", "lecture"),
+            ("Tài chính doanh nghiệp", "lecture"),
+            ("Marketing số trong thời đại 4.0", "lecture"),
+            ("Kế toán tài chính - chuẩn mực Việt Nam", "lecture"),
+            ("Phân tích tài chính và đầu tư", "lecture"),
+            ("Thương mại điện tử và kinh doanh trực tuyến", "lecture"),
+            ("Quản trị rủi ro tài chính", "lecture"),
+            ("Khóa luận: Tác động của fintech đến ngân hàng truyền thống", "thesis"),
+            ("Khóa luận: Chiến lược marketing cho startup", "thesis"),
+            ("Đề thi cuối kỳ - Kinh tế vi mô 2024", "exam"),
+            ("Bài tập phân tích báo cáo tài chính", "exercise"),
+            ("Tài liệu tham khảo: Nguyên lý kế toán Việt Nam", "reference"),
         ],
     },
-    "Natural Language Processing": {
-        "tags": ["nlp", "text", "bert", "gpt", "tokenization"],
+    "Khoa Điện - Điện tử": {
+        "departments": [
+            "Bộ môn Điện tử cơ bản",
+            "Bộ môn Điều khiển tự động",
+            "Bộ môn Viễn thông",
+            "Bộ môn Kỹ thuật điện",
+        ],
+        "majors": [
+            "Kỹ thuật điện tử",
+            "Kỹ thuật điều khiển",
+            "Kỹ thuật viễn thông",
+            "Kỹ thuật điện",
+        ],
+        "subject_codes": ["EE2010", "EE3020", "TL3001", "CT2050"],
+        "categories": ["dien-tu", "dieu-khien", "vien-thong", "ky-thuat-dien"],
+        "tags_pool": ["arduino", "raspberry-pi", "vi-dieu-khien", "plc", "dieu-khien-pid",
+                      "iot", "rf", "mach-dien", "bien-tan", "cam-bien", "robot"],
         "topics": [
-            "Text Preprocessing and Tokenization",
-            "Word Embeddings: Word2Vec and GloVe",
-            "BERT: Pre-trained Language Models",
-            "Sentiment Analysis with Transformers",
-            "Named Entity Recognition",
-            "Machine Translation",
-            "Text Summarization",
-            "Question Answering Systems",
-            "Topic Modeling with LDA",
-            "Text Generation with GPT",
+            ("Điện tử tương tự - khuếch đại thuật toán", "lecture"),
+            ("Lập trình vi điều khiển Arduino", "lecture"),
+            ("IoT - kết nối thiết bị thông minh", "lecture"),
+            ("Điều khiển PID và ứng dụng", "lecture"),
+            ("Kỹ thuật viễn thông cơ bản", "lecture"),
+            ("Robot công nghiệp - lập trình và điều khiển", "lecture"),
+            ("Khóa luận: Hệ thống nhà thông minh IoT", "thesis"),
+            ("Đề thi - Điện tử số 2023", "exam"),
+            ("Bài tập mô phỏng mạch điện với Proteus", "exercise"),
+            ("Tài liệu tham khảo: Microcontrollers and the C Language", "reference"),
         ],
     },
-    "Python Programming": {
-        "tags": ["python", "programming", "oop", "async", "typing"],
-        "topics": [
-            "Advanced Python: Decorators and Metaclasses",
-            "Async/Await: Concurrency in Python",
-            "Python Type Hints and Mypy",
-            "Design Patterns in Python",
-            "Python Performance Optimization",
-            "Testing with Pytest",
-            "Python Packaging and Distribution",
-            "Functional Programming in Python",
-            "Python Memory Management",
-            "Context Managers and Generators",
+    "Khoa Toán - Cơ - Tin học": {
+        "departments": [
+            "Bộ môn Toán học",
+            "Bộ môn Xác suất thống kê",
+            "Bộ môn Toán ứng dụng",
         ],
-    },
-    "Web Development": {
-        "tags": ["web", "fastapi", "django", "rest", "api", "microservices"],
-        "topics": [
-            "Building REST APIs with FastAPI",
-            "Django ORM Deep Dive",
-            "Microservices Architecture Patterns",
-            "API Gateway Design",
-            "WebSocket Real-time Communication",
-            "GraphQL vs REST",
-            "Authentication and OAuth 2.0",
-            "Rate Limiting and Throttling",
-            "API Versioning Strategies",
-            "Server-Sent Events",
+        "majors": [
+            "Toán học",
+            "Thống kê",
+            "Toán tin",
         ],
-    },
-    "Data Engineering": {
-        "tags": ["data-engineering", "etl", "pipeline", "spark", "kafka"],
+        "subject_codes": ["MA1101", "MA2010", "ST3001", "MA3050"],
+        "categories": ["toan-hoc", "xac-suat", "thong-ke", "toan-ung-dung"],
+        "tags_pool": ["dai-so-tuyen-tinh", "giai-tich", "xac-suat", "thong-ke",
+                      "toi-uu-hoa", "matlab", "r-language", "mo-hinh-hoa"],
         "topics": [
-            "Building Data Pipelines with Apache Kafka",
-            "Apache Spark for Big Data Processing",
-            "ETL Best Practices",
-            "Data Warehouse Design",
-            "Stream Processing with Flink",
-            "Data Lake Architecture",
-            "Schema Evolution and Versioning",
-            "Data Quality Monitoring",
-            "CDC with Debezium",
-            "Batch vs Stream Processing",
-        ],
-    },
-    "DevOps": {
-        "tags": ["devops", "docker", "kubernetes", "ci-cd", "cloud"],
-        "topics": [
-            "Docker: Containerization Fundamentals",
-            "Kubernetes in Production",
-            "CI/CD Pipelines with GitHub Actions",
-            "Infrastructure as Code with Terraform",
-            "Monitoring with Prometheus and Grafana",
-            "Log Management with ELK Stack",
-            "Service Mesh with Istio",
-            "GitOps Workflow",
-            "Cloud-Native Architecture",
-            "Chaos Engineering",
-        ],
-    },
-    "Database": {
-        "tags": ["database", "sql", "nosql", "postgres", "redis", "vector-db"],
-        "topics": [
-            "PostgreSQL Advanced Queries",
-            "Redis Caching Strategies",
-            "MongoDB Aggregation Framework",
-            "Database Indexing and Optimization",
-            "Sharding and Partitioning",
-            "Vector Databases and pgvector",
-            "Time-Series Databases",
-            "Graph Databases with Neo4j",
-            "Database Migration Strategies",
-            "Connection Pooling and Performance",
-        ],
-    },
-    "System Design": {
-        "tags": ["system-design", "architecture", "distributed", "scalability"],
-        "topics": [
-            "Designing a URL Shortener",
-            "Building a Real-time Chat System",
-            "Distributed Caching Strategies",
-            "Load Balancing Algorithms",
-            "Message Queue Patterns",
-            "CAP Theorem and Consistency Models",
-            "Event-Driven Architecture",
-            "CQRS and Event Sourcing",
-            "Rate Limiter Design",
-            "Search Engine Architecture",
-        ],
-    },
-    "Security": {
-        "tags": ["security", "encryption", "auth", "jwt", "oauth"],
-        "topics": [
-            "JWT Authentication Deep Dive",
-            "OAuth 2.0 and OpenID Connect",
-            "API Security Best Practices",
-            "SQL Injection Prevention",
-            "Cross-Site Scripting (XSS) Defense",
-            "Encryption at Rest and in Transit",
-            "Security Headers and CORS",
-            "Penetration Testing Basics",
+            ("Đại số tuyến tính ứng dụng trong Machine Learning", "lecture"),
+            ("Giải tích - chuỗi số và tích phân", "lecture"),
+            ("Xác suất thống kê cho kỹ sư", "lecture"),
+            ("Tối ưu hóa - gradient descent và ứng dụng", "lecture"),
+            ("Phân tích dữ liệu với R", "lecture"),
+            ("Khóa luận: Ứng dụng thống kê Bayes trong dự báo", "thesis"),
+            ("Đề thi - Xác suất thống kê 2024", "exam"),
+            ("Bài tập giải tích nhiều biến", "exercise"),
         ],
     },
 }
 
+DOCUMENT_TYPES = ["thesis", "lecture", "exam", "exercise", "reference"]
 ROLES = ["STUDENT", "TEACHER"]
-LANGUAGES = ["en", "en", "en", "vi"]  # weighted towards English
-INTERACTION_TYPES = ["view", "view", "view", "download", "bookmark", "buy"]  # weighted
+LANGUAGES = ["vi", "vi", "vi", "en"]   # weighted towards Vietnamese
+ACADEMIC_YEARS = ["2022-2023", "2023-2024", "2024-2025"]
+# Interaction weighted: read and buy are less frequent but high signal
+INTERACTION_TYPES = ["view", "view", "view", "read", "read", "download", "bookmark", "buy"]
 
 
-def _generate_description(title: str, category: str) -> str:
-    return f"A comprehensive guide to {title.lower()}. Covers key concepts in {category} with practical examples and real-world applications."
-
-
-def _generate_content(title: str, category: str) -> str:
+def _generate_description(title: str, faculty: str, doc_type: str) -> str:
+    type_map = {
+        "thesis": "Khóa luận tốt nghiệp nghiên cứu về",
+        "lecture": "Bài giảng tổng quan về",
+        "exam": "Đề thi kiểm tra kiến thức về",
+        "exercise": "Bài tập thực hành giúp rèn luyện kỹ năng về",
+        "reference": "Tài liệu tham khảo chuyên sâu về",
+    }
+    prefix = type_map.get(doc_type, "Tài liệu về")
     return (
-        f"{title} is an important topic in {category}. "
-        f"This document covers the fundamentals, advanced techniques, and "
-        f"real-world use cases. Whether you're a beginner or an experienced "
-        f"practitioner, this guide provides valuable insights and hands-on "
-        f"examples to help you master the subject. The content has been "
-        f"carefully curated from industry experts and academic research. "
-        f"Topics include theory, implementation, best practices, and common "
-        f"pitfalls to avoid."
+        f"{prefix} {title.lower()}. "
+        f"Thuộc chương trình đào tạo của {faculty}. "
+        f"Phù hợp cho sinh viên và giảng viên muốn nắm vững kiến thức nền tảng và nâng cao."
+    )
+
+
+def _generate_content(title: str, faculty: str, doc_type: str) -> str:
+    return (
+        f"Tài liệu \"{title}\" thuộc {faculty}. "
+        f"Đây là {doc_type} bao gồm lý thuyết cơ bản, các ví dụ thực tế và bài tập ứng dụng. "
+        f"Nội dung được biên soạn theo chuẩn chương trình khung của Bộ Giáo dục và Đào tạo. "
+        f"Tài liệu phù hợp cho sinh viên từ năm 1 đến năm 4, cũng như giảng viên trong quá trình "
+        f"giảng dạy và nghiên cứu. Nội dung bao gồm: phần lý thuyết, ví dụ minh họa, "
+        f"bài tập có lời giải, và câu hỏi ôn tập cuối chương."
     )
 
 
@@ -274,33 +280,49 @@ async def seed_documents(pool: asyncpg.Pool, model):
     """Seed 200 documents with real sentence-transformer embeddings."""
     logger.info("📄 Seeding %d documents ...", NUM_DOCUMENTS)
 
-    all_topics = []
-    for cat_name, cat_data in CATEGORIES.items():
-        for topic in cat_data["topics"]:
-            all_topics.append((cat_name, topic, cat_data["tags"]))
+    # Build flat list of all document templates across faculties
+    all_templates = []
+    for faculty_name, faculty_data in FACULTIES.items():
+        for title, doc_type in faculty_data["topics"]:
+            tags = random.sample(faculty_data["tags_pool"], min(4, len(faculty_data["tags_pool"])))
+            categories = random.sample(faculty_data["categories"], min(2, len(faculty_data["categories"])))
+            all_templates.append({
+                "faculty": faculty_name,
+                "tags": tags,
+                "categories": categories,
+                "title": title,
+                "doc_type": doc_type,
+            })
 
-    # Repeat/cycle to reach NUM_DOCUMENTS
     docs = []
     for i in range(NUM_DOCUMENTS):
-        idx = i % len(all_topics)
-        cat_name, title, cat_tags = all_topics[idx]
+        tmpl = all_templates[i % len(all_templates)]
 
-        # Add variant suffix to make titles unique
-        if i >= len(all_topics):
-            title = f"{title} (Part {i // len(all_topics) + 1})"
+        title = tmpl["title"]
+        if i >= len(all_templates):
+            title = f"{title} - Phần {i // len(all_templates) + 1}"
+
+        faculty = tmpl["faculty"]
+        doc_type = tmpl["doc_type"]
 
         doc_id = f"doc-{i + 1:04d}"
-        tags = random.sample(cat_tags, min(3, len(cat_tags)))
-        categories = [cat_name.lower().replace(" ", "-")]
+        tags = tmpl["tags"][:]
+        categories = tmpl["categories"][:]
         language = random.choice(LANGUAGES)
-        author_id = f"author-{random.randint(1, 10):02d}"
-        author_role = random.choice(ROLES)
-        description = _generate_description(title, cat_name)
-        content = _generate_content(title, cat_name)
-        popularity = round(random.uniform(0, 200), 1)
+        author_id = f"user-{random.randint(1, 10):03d}"
+        author_role = "TEACHER" if doc_type in ("lecture", "exam") else random.choice(ROLES)
+        description = _generate_description(title, faculty, doc_type)
+        content = _generate_content(title, faculty, doc_type)
+        popularity = round(random.uniform(0, 300), 1)
 
-        # Build combined text for embedding
-        combined = f"Title: {title}\nDescription: {description}\nTags: {' '.join(tags)}\nCategories: {' '.join(categories)}\nContent: {content[:500]}"
+        combined = (
+            f"Title: {title}\n"
+            f"Description: {description}\n"
+            f"Tags: {' '.join(tags)}\n"
+            f"Categories: {' '.join(categories)}\n"
+            f"Faculty: {faculty}\n"
+            f"Content: {content[:500]}"
+        )
 
         docs.append({
             "document_id": doc_id,
@@ -310,6 +332,7 @@ async def seed_documents(pool: asyncpg.Pool, model):
             "tags": tags,
             "categories": categories,
             "language": language,
+            "faculty": faculty,
             "author_id": author_id,
             "author_role": author_role,
             "popularity_score": popularity,
@@ -323,8 +346,7 @@ async def seed_documents(pool: asyncpg.Pool, model):
     embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
     logger.info("  ✅ Encoding done in %.1f seconds", time.time() - t0)
 
-
-    # Batch insert — pass embeddings as text, cast in SQL
+    # Batch insert
     async with pool.acquire() as conn:
         for i, doc in enumerate(docs):
             emb_str = _vector_to_str(embeddings[i])
@@ -332,18 +354,32 @@ async def seed_documents(pool: asyncpg.Pool, model):
                 """
                 INSERT INTO documents (
                     document_id, title, description, content,
-                    tags, categories, language,
+                    tags, categories, language, faculty,
                     author_id, author_role, embedding,
                     popularity_score, updated_at
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::vector(384),$11, NOW() - ($12 || ' days')::interval)
+                ) VALUES (
+                    $1,$2,$3,$4,$5,$6,$7,$8,
+                    $9,$10,$11::vector(384),
+                    $12, NOW() - ($13 || ' days')::interval
+                )
                 ON CONFLICT (document_id) DO UPDATE SET
                     title = EXCLUDED.title,
+                    description = EXCLUDED.description,
+                    content = EXCLUDED.content,
+                    tags = EXCLUDED.tags,
+                    categories = EXCLUDED.categories,
+                    language = EXCLUDED.language,
+                    faculty = EXCLUDED.faculty,
+                    author_id = EXCLUDED.author_id,
+                    author_role = EXCLUDED.author_role,
                     embedding = EXCLUDED.embedding,
+                    popularity_score = EXCLUDED.popularity_score,
                     updated_at = EXCLUDED.updated_at
                 """,
                 doc["document_id"], doc["title"], doc["description"],
                 doc["content"], doc["tags"], doc["categories"],
-                doc["language"], doc["author_id"], doc["author_role"],
+                doc["language"], doc["faculty"],
+                doc["author_id"], doc["author_role"],
                 emb_str, doc["popularity_score"],
                 str(random.randint(1, 90)),
             )
@@ -352,83 +388,117 @@ async def seed_documents(pool: asyncpg.Pool, model):
 
 
 async def seed_users(pool: asyncpg.Pool, model):
-    """Seed 30 users with embeddings and random A/B groups."""
+    """Seed 30 users (sinh viên & giảng viên) with embeddings and random A/B groups."""
     logger.info("👤 Seeding %d users ...", NUM_USERS)
 
-    interest_pools = {
-        "ml_enthusiast": "machine learning deep learning neural networks pytorch tensorflow",
-        "web_developer": "web development api fastapi django microservices cloud",
-        "data_engineer": "data engineering kafka spark etl pipeline stream processing",
-        "devops_pro": "devops docker kubernetes ci-cd infrastructure cloud-native",
-        "nlp_researcher": "natural language processing text transformers bert gpt sentiment",
-        "db_admin": "database postgresql redis mongodb indexing optimization sharding",
-        "security_expert": "security encryption authentication jwt oauth api-security",
-        "system_architect": "system design architecture distributed scalability caching",
-        "python_dev": "python programming async decorators testing packaging oop",
-        "full_stack": "web api database python javascript react frontend backend",
-    }
-
-    profiles = list(interest_pools.keys())
-
-    users = []
-    for i in range(NUM_USERS):
-        user_id = f"user-{i + 1:03d}"
-        role = random.choice(ROLES)
-        ab_group = "A" if i % 2 == 0 else "B"
-        profile_type = profiles[i % len(profiles)]
-        interest_text = interest_pools[profile_type]
-
-        combined = f"User profile: {profile_type}. Interests: {interest_text}. Role: {role}"
-
-        users.append({
-            "user_id": user_id,
-            "role": role,
-            "ab_group": ab_group,
-            "combined_text": combined,
-        })
-
-    # Also create 2 cold-start users (no embedding)
-    cold_start_users = [
-        {"user_id": "user-cold-001", "role": "STUDENT", "ab_group": "A"},
-        {"user_id": "user-cold-002", "role": "STUDENT", "ab_group": "B"},
+    # User profiles covering different faculties and roles
+    user_profiles = [
+        # Sinh viên CNTT
+        {"username": "nguyenvana",    "display_name": "Nguyễn Văn A",    "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Hệ thống thông tin",   "year": 3, "interests": ["machine-learning", "python", "web", "database"]},
+        {"username": "tranthib",      "display_name": "Trần Thị B",      "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Kỹ thuật phần mềm",    "year": 2, "interests": ["java", "web", "api", "microservices"]},
+        {"username": "levancuong",    "display_name": "Lê Văn Cường",    "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Khoa học máy tính",    "year": 4, "interests": ["ai", "deep-learning", "research", "nlp"]},
+        {"username": "phamthidung",   "display_name": "Phạm Thị Dung",   "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "An toàn thông tin",    "year": 3, "interests": ["security", "network", "python", "linux"]},
+        {"username": "hoangvane",     "display_name": "Hoàng Văn E",     "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Trí tuệ nhân tạo",     "year": 3, "interests": ["pytorch", "deep-learning", "nlp", "python"]},
+        {"username": "dothif",        "display_name": "Đỗ Thị F",        "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Hệ thống thông tin",   "year": 1, "interests": ["database", "sql", "web"]},
+        {"username": "buitrung",      "display_name": "Bùi Trung G",     "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Kỹ thuật phần mềm",    "year": 2, "interests": ["java", "microservices", "docker"]},
+        {"username": "ngothihanh",    "display_name": "Ngô Thị Hạnh",    "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Khoa học máy tính",    "year": 4, "interests": ["algorithms", "python", "competitive-programming"]},
+        # Sinh viên Kinh tế
+        {"username": "vuthimai",      "display_name": "Vũ Thị Mai",      "role": "STUDENT", "faculty": "Khoa Kinh tế",             "major": "Tài chính - Ngân hàng", "year": 3, "interests": ["tai-chinh", "ngan-hang", "chung-khoan"]},
+        {"username": "dangvankhanh",  "display_name": "Đặng Văn Khánh",  "role": "STUDENT", "faculty": "Khoa Kinh tế",             "major": "Marketing",             "year": 2, "interests": ["marketing", "thuong-mai-dien-tu", "kinh-te"]},
+        {"username": "lythilan",      "display_name": "Lý Thị Lan",      "role": "STUDENT", "faculty": "Khoa Kinh tế",             "major": "Kế toán",               "year": 3, "interests": ["ke-toan", "tai-chinh", "erp"]},
+        {"username": "tranvancuong2", "display_name": "Trần Văn Cường",  "role": "STUDENT", "faculty": "Khoa Kinh tế",             "major": "Quản trị kinh doanh",   "year": 4, "interests": ["quan-tri", "startup", "marketing"]},
+        # Sinh viên Điện - Điện tử
+        {"username": "nguyenthimien", "display_name": "Nguyễn Thị Miên", "role": "STUDENT", "faculty": "Khoa Điện - Điện tử",     "major": "Kỹ thuật điện tử",    "year": 2, "interests": ["arduino", "iot", "vi-dieu-khien", "robot"]},
+        {"username": "phanvannam",    "display_name": "Phan Văn Nam",     "role": "STUDENT", "faculty": "Khoa Điện - Điện tử",     "major": "Kỹ thuật điều khiển",  "year": 3, "interests": ["plc", "dieu-khien-pid", "cam-bien"]},
+        {"username": "caokhanhoanh",  "display_name": "Cao Khánh Oanh",   "role": "STUDENT", "faculty": "Khoa Điện - Điện tử",     "major": "Kỹ thuật viễn thông",  "year": 3, "interests": ["rf", "vien-thong", "linux"]},
+        # Sinh viên Toán
+        {"username": "trinhthiphuong","display_name": "Trịnh Thị Phương","role": "STUDENT",  "faculty": "Khoa Toán - Cơ - Tin học","major": "Thống kê",            "year": 3, "interests": ["xac-suat", "thong-ke", "r-language", "machine-learning"]},
+        {"username": "maivanquan",    "display_name": "Mai Văn Quân",     "role": "STUDENT", "faculty": "Khoa Toán - Cơ - Tin học", "major": "Toán học",            "year": 2, "interests": ["dai-so-tuyen-tinh", "giai-tich", "toi-uu-hoa"]},
+        # Giảng viên CNTT
+        {"username": "gsnguyenvanr",  "display_name": "GS. Nguyễn Văn R", "role": "TEACHER", "faculty": "Khoa Công nghệ thông tin", "major": "Khoa học máy tính",   "year": None, "interests": ["ai", "deep-learning", "research", "python", "pytorch"]},
+        {"username": "tsnthanhsang",  "display_name": "TS. Nguyễn Thanh Sang", "role": "TEACHER", "faculty": "Khoa Công nghệ thông tin", "major": "Hệ thống thông tin", "year": None, "interests": ["database", "microservices", "docker", "postgresql"]},
+        {"username": "thstranh",      "display_name": "ThS. Trần Thị Anh","role": "TEACHER",  "faculty": "Khoa Công nghệ thông tin", "major": "Kỹ thuật phần mềm",  "year": None, "interests": ["java", "spring", "agile", "software-engineering"]},
+        {"username": "tslevanu",      "display_name": "TS. Lê Văn Ú",    "role": "TEACHER", "faculty": "Khoa Công nghệ thông tin", "major": "An toàn thông tin",    "year": None, "interests": ["security", "cryptography", "network"]},
+        # Giảng viên Kinh tế
+        {"username": "gsphamthiv",    "display_name": "GS. Phạm Thị Vân","role": "TEACHER",  "faculty": "Khoa Kinh tế",            "major": "Kinh tế học",          "year": None, "interests": ["kinh-te-vi-mo", "tai-chinh", "phan-tich"]},
+        {"username": "tshoangvanw",   "display_name": "TS. Hoàng Văn W",  "role": "TEACHER", "faculty": "Khoa Kinh tế",            "major": "Tài chính - Ngân hàng", "year": None, "interests": ["tai-chinh", "ngan-hang", "fintech"]},
+        # Giảng viên Điện - Điện tử
+        {"username": "tsdothix",      "display_name": "TS. Đỗ Thị X",    "role": "TEACHER", "faculty": "Khoa Điện - Điện tử",     "major": "Kỹ thuật điện tử",    "year": None, "interests": ["arduino", "iot", "robot", "cam-bien"]},
+        # Giảng viên Toán
+        {"username": "gsbuitriy",     "display_name": "GS. Bùi Trí Y",   "role": "TEACHER", "faculty": "Khoa Toán - Cơ - Tin học", "major": "Toán ứng dụng",       "year": None, "interests": ["toi-uu-hoa", "xac-suat", "machine-learning", "matlab"]},
+        # Sinh viên mới (ít lịch sử — test cold start nhẹ)
+        {"username": "svmoi001",      "display_name": "Sinh viên Mới 1",  "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Hệ thống thông tin",  "year": 1, "interests": []},
+        {"username": "svmoi002",      "display_name": "Sinh viên Mới 2",  "role": "STUDENT", "faculty": "Khoa Kinh tế",            "major": "Marketing",            "year": 1, "interests": []},
+        # Admin
+        {"username": "admin001",      "display_name": "Quản trị viên",    "role": "ADMIN",   "faculty": None,                       "major": None,                   "year": None, "interests": []},
+        # Extra
+        {"username": "user028",       "display_name": "Người dùng 28",    "role": "STUDENT", "faculty": "Khoa Công nghệ thông tin", "major": "Trí tuệ nhân tạo",    "year": 2, "interests": ["ai", "python"]},
+        {"username": "user029",       "display_name": "Người dùng 29",    "role": "STUDENT", "faculty": "Khoa Kinh tế",            "major": "Quản trị kinh doanh",   "year": 3, "interests": ["quan-tri", "marketing"]},
     ]
 
     # Encode user profiles
-    texts = [u["combined_text"] for u in users]
-    logger.info("  ⏳ Encoding %d user profiles ...", len(texts))
-    embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
+    profiles_text = []
+    for p in user_profiles[:NUM_USERS]:
+        parts = [f"Role: {p['role']}"]
+        if p.get("faculty"):
+            parts.append(f"Faculty: {p['faculty']}")
+        if p.get("interests"):
+            parts.append(f"Interests: {' '.join(p['interests'])}")
+        profiles_text.append(" | ".join(parts))
+
+    logger.info("  ⏳ Encoding %d user profiles ...", len(profiles_text))
+    embeddings = model.encode(profiles_text, show_progress_bar=True, batch_size=32)
+
+    # Cold start users (no embedding → triggers cold start path in recommendation)
+    cold_start_users = [
+        {"user_id": "user-cold-001", "role": "STUDENT", "ab_group": "A",
+         "faculty": "Khoa Công nghệ thông tin"},
+        {"user_id": "user-cold-002", "role": "STUDENT", "ab_group": "B",
+         "faculty": "Khoa Kinh tế"},
+    ]
 
     async with pool.acquire() as conn:
-        for i, user in enumerate(users):
+        for i, p in enumerate(user_profiles[:NUM_USERS]):
+            user_id = f"user-{i + 1:03d}"
+            ab_group = "A" if i % 2 == 0 else "B"
             emb_str = _vector_to_str(embeddings[i])
+
             await conn.execute(
                 """
-                INSERT INTO users_profile (user_id, role, ab_group, embedding, updated_at)
-                VALUES ($1, $2, $3, $4::vector(384), NOW())
+                INSERT INTO users_profile
+                    (user_id, role, faculty, interests, embedding, ab_group, updated_at)
+                VALUES ($1, $2, $3, $4, $5::vector(384), $6, NOW())
                 ON CONFLICT (user_id) DO UPDATE SET
+                    role = EXCLUDED.role,
+                    faculty = EXCLUDED.faculty,
+                    interests = EXCLUDED.interests,
                     embedding = EXCLUDED.embedding,
                     ab_group = EXCLUDED.ab_group,
                     updated_at = NOW()
                 """,
-                user["user_id"], user["role"], user["ab_group"], emb_str,
+                user_id, p["role"],
+                p.get("faculty"),
+                p.get("interests") or [],
+                emb_str, ab_group,
             )
 
         # Cold start users (no embedding)
         for cu in cold_start_users:
             await conn.execute(
                 """
-                INSERT INTO users_profile (user_id, role, ab_group, updated_at)
-                VALUES ($1, $2, $3, NOW())
+                INSERT INTO users_profile
+                    (user_id, role, faculty, ab_group, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
                 ON CONFLICT (user_id) DO NOTHING
                 """,
-                cu["user_id"], cu["role"], cu["ab_group"],
+                cu["user_id"], cu["role"], cu.get("faculty"), cu["ab_group"],
             )
 
     logger.info("✅ Seeded %d users + %d cold-start users", NUM_USERS, len(cold_start_users))
 
 
 async def seed_interactions(pool: asyncpg.Pool):
-    """Seed 500+ random interactions."""
+    """Seed 600+ random interactions including all types (view/read/download/buy/bookmark)."""
     logger.info("👆 Seeding %d interactions ...", NUM_INTERACTIONS)
 
     async with pool.acquire() as conn:
@@ -436,7 +506,7 @@ async def seed_interactions(pool: asyncpg.Pool):
             user_id = f"user-{random.randint(1, NUM_USERS):03d}"
             doc_id = f"doc-{random.randint(1, NUM_DOCUMENTS):04d}"
             interaction_type = random.choice(INTERACTION_TYPES)
-            interaction_id = str(uuid.uuid4())
+            interaction_id = uuid.uuid4()
 
             await conn.execute(
                 """
@@ -459,7 +529,7 @@ def _vector_to_str(v):
 
 
 async def main():
-    logger.info("🌱 Starting data seed ...")
+    logger.info("🌱 Starting data seed (Vietnamese university mock data) ...")
 
     # 1. Wait for postgres
     await wait_for_postgres()
@@ -485,7 +555,7 @@ async def main():
     )
 
     try:
-        # 5. Create schema (tables + indexes)
+        # 5. Create schema (tables + indexes + migrations)
         await create_schema(pool)
 
         # 6. Load sentence-transformer model
@@ -516,7 +586,16 @@ async def main():
             dc = await conn.fetchval("SELECT COUNT(*) FROM documents")
             uc = await conn.fetchval("SELECT COUNT(*) FROM users_profile")
             ic = await conn.fetchval("SELECT COUNT(*) FROM user_interactions")
+            faculties = await conn.fetch(
+                "SELECT DISTINCT faculty FROM documents WHERE faculty IS NOT NULL LIMIT 10"
+            )
+            inter_types = await conn.fetch(
+                "SELECT interaction_type, COUNT(*) as cnt FROM user_interactions "
+                "GROUP BY interaction_type ORDER BY cnt DESC"
+            )
             logger.info("📊 Final counts: %d docs, %d users, %d interactions", dc, uc, ic)
+            logger.info("🏫 Faculties seeded: %s", [r["faculty"] for r in faculties])
+            logger.info("👆 Interaction types: %s", {r["interaction_type"]: r["cnt"] for r in inter_types})
 
         logger.info("🎉 Seed complete!")
 

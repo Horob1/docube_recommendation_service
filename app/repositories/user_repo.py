@@ -18,6 +18,8 @@ async def upsert_user(
     role: Optional[str],
     embedding: np.ndarray,
     ab_group: Optional[str] = None,
+    faculty: Optional[str] = None,
+    interests: list[str] = None,
 ) -> None:
     """Insert or update a user profile with embedding."""
     if ab_group is None:
@@ -27,14 +29,18 @@ async def upsert_user(
     async with pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO users_profile (user_id, role, embedding, ab_group, updated_at)
-            VALUES ($1, $2, $3, $4, NOW())
+            INSERT INTO users_profile
+                (user_id, role, faculty, interests, embedding, ab_group, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW())
             ON CONFLICT (user_id) DO UPDATE SET
                 role = EXCLUDED.role,
+                faculty = EXCLUDED.faculty,
+                interests = EXCLUDED.interests,
                 embedding = EXCLUDED.embedding,
                 updated_at = NOW()
             """,
-            user_id, role, embedding, ab_group,
+            user_id, role, faculty,
+            interests or [], embedding, ab_group,
         )
     logger.debug("Upserted user %s (ab_group=%s)", user_id, ab_group)
 

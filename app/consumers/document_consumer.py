@@ -65,6 +65,7 @@ async def _handle_message(payload: dict) -> None:
             content=event.content,
             tags=event.tags,
             categories=event.categories,
+            faculty=event.faculty,
             author_display_name=event.author_display_name,
         )
 
@@ -76,6 +77,7 @@ async def _handle_message(payload: dict) -> None:
             tags=event.tags,
             categories=event.categories,
             language=event.language,
+            faculty=event.faculty,
             author_id=event.author_id,
             author_role=event.author_role,
             embedding=embedding,

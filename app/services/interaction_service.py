@@ -19,8 +19,10 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Interaction weights for embedding blending
+# Priority: buy > read > bookmark > download > view > search(0.1)
 INTERACTION_WEIGHTS = {
     "view": 0.2,
+    "read": 0.2,
     "download": 0.4,
     "bookmark": 0.6,
     "buy": 1.0,
@@ -29,6 +31,7 @@ INTERACTION_WEIGHTS = {
 # Popularity increments per interaction type
 POPULARITY_INCREMENTS = {
     "view": 1.0,
+    "read": 1.0,
     "download": 3.0,
     "bookmark": 5.0,
     "buy": 10.0,
